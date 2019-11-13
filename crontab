@@ -1,0 +1,7 @@
+0 4 */3 * * cd /erxes-ai && /usr/local/spark/bin/spark-submit --packages org.mongodb.spark:mongo-spark-connector_2.11:2.4.1 src/jobs/company_meta_extractor.py > /proc/1/fd/1 2>/proc/1/fd/2
+0 6 */3 * * cd /erxes-ai && /usr/local/spark/bin/spark-submit --packages org.mongodb.spark:mongo-spark-connector_2.11:2.4.1 src/jobs/customer_scoring.py > /proc/1/fd/1 2>/proc/1/fd/2
+0 8 */3 * * cd /erxes-ai && /usr/local/spark/bin/spark-submit --packages org.mongodb.spark:mongo-spark-connector_2.11:2.4.1 src/jobs/merge_customers.py > /proc/1/fd/1 2>/proc/1/fd/2
+0 0 * * * cd /erxes-ai && /usr/local/spark/bin/spark-submit --packages org.mongodb.spark:mongo-spark-connector_2.11:2.4.1 src/jobs/feature_suggestion.py > /proc/1/fd/1 2>/proc/1/fd/2
+0 2 * * * cd /erxes-ai && /usr/local/spark/bin/spark-submit --packages org.mongodb.spark:mongo-spark-connector_2.11:2.4.1 src/jobs/integration_emptiness.py > /proc/1/fd/1 2>/proc/1/fd/2
+
+# This file must have new line at the end of file!
