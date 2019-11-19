@@ -2,7 +2,7 @@
 Customer scoring. Run every 3 days
 """
 
-from pyspark.sql.types import StringType, StructField, StructType, MapType  # pylint: disable=import-error
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType, MapType  # pylint: disable=import-error
 from src.producer import publish
 from src.utils import load_collection, create_session, execute_job
 
@@ -16,6 +16,7 @@ CONFORMITY_SCHEMA = StructType([
 
 CUSTOMER_SCHEMA = StructType([
     StructField('_id', StringType()),
+    StructField('profileScore', IntegerType(), True),
     StructField('firstName', StringType()),
     StructField('lastName', StringType()),
     StructField('primaryPhone', StringType()),
@@ -39,6 +40,7 @@ def job(mongo_url):
     aggre_df = session.sql('''
         SELECT
             customers._id,
+            customers.profileScore,
             customers.firstName,
             customers.lastName,
             customers.primaryPhone,
@@ -70,7 +72,9 @@ def job(mongo_url):
                     confs.mainTypeId
             ) AS aggregated
 
-        LEFT JOIN customers ON customers._id=aggregated.customerId
+        RIGHT JOIN customers ON customers._id=aggregated.customerId
+
+        WHERE customers.profileScore > 0 OR customers.profileScore IS NULL
     ''')
 
     def mapper(entry):
@@ -79,31 +83,49 @@ def job(mongo_url):
         """
 
         score = 0
+        explanation = {}
 
         if entry.visitorContactInfo:
             score += 1
+            explanation['visitorContactInfo'] = '+1'
 
         if entry.firstName:
             score += 5
+            explanation['firstName'] = '+5'
 
         if entry.lastName:
             score += 5
+            explanation['lastName'] = '+5'
 
         if entry.primaryEmail:
             score += 5
+            explanation['primaryEmail'] = '+5'
 
         if entry.primaryPhone:
             score += 5
+            explanation['primaryPhone'] = '+5'
 
-        score += entry.totalTasks * 20
-        score += entry.totalTickets * 30
-        score += entry.totalDeals * 50
+        total_tasks = entry.totalTasks or 0
+        total_tickets = entry.totalTickets or 0
+        total_deals = entry.totalDeals or 0
 
-        return {'_id': entry['_id'], 'score': score}
+        score += total_tasks * 20
+        score += total_tickets * 30
+        score += total_deals * 50
 
-    score_map = aggre_df.rdd.map(mapper).collect()
+        explanation['totalTasks'] = '+%s' % (total_tasks * 20)
+        explanation['totalTickets'] = '+%s' % (total_tickets * 30)
+        explanation['totalDeals'] = '+%s' % (total_tickets * 50)
 
-    publish({'action': 'customerScoring', 'scoreMap': score_map})
+        return {'_id': entry['_id'], 'isUpdated': entry.profileScore != score, 'score': score, 'explanation': explanation}
 
+    score_map = aggre_df.rdd \
+        .map(mapper) \
+        .filter(lambda entry: entry['isUpdated']) \
+        .map(lambda entry: {'_id': entry['_id'], 'score': entry['score'], 'explanation': entry['explanation']}) \
+        .collect()
+
+    if score_map:
+        publish({'jobType': 'customerScoring', 'scoreMap': score_map})
 
 execute_job(job)
