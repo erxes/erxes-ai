@@ -89,27 +89,27 @@ def job(mongo_url):
         if entry.visitorContactInfo:
             score += 1
             explanation['visitorContactInfo'] = '+1'
-            name = name + 'Visitor contact info:' + str(entry.visitorContactInfo)
+            name = name + 'Visitor contact info: ' + str(entry.visitorContactInfo)
 
         if entry.firstName:
             score += 5
             explanation['firstName'] = '+5'
-            name = name + 'First name:' + entry.firstName
+            name = name + 'First name: ' + entry.firstName
 
         if entry.lastName:
             score += 5
             explanation['lastName'] = '+5'
-            name = name + 'Last name:' + entry.lastName
+            name = name + 'Last name: ' + entry.lastName
 
         if entry.primaryEmail:
             score += 5
             explanation['primaryEmail'] = '+5'
-            name = name + 'Primary email:' + entry.primaryEmail
+            name = name + 'Primary email: ' + entry.primaryEmail
 
         if entry.primaryPhone:
             score += 5
             explanation['primaryPhone'] = '+5'
-            name = name + 'Primary phone:' + entry.primaryPhone
+            name = name + 'Primary phone: ' + entry.primaryPhone
 
         total_tasks = entry.totalTasks or 0
         total_tickets = entry.totalTickets or 0

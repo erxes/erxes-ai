@@ -20,7 +20,7 @@ def get_job_types():
 
     results = []
 
-    for job_type in ['mergeCustomers', 'companyMetaExtraction', 'customerScoring']:
+    for job_type in ['mergeCustomers', 'companyMetaExtraction', 'customerScoring', 'suggestion']:
         results.append({
             'name': job_type,
             'notificationsCount': job_results.count({'type': job_type, 'parent_id': None, 'is_notified': False}),
@@ -70,9 +70,12 @@ def get_job_detail():
 
     job = job_results.find_one({'_id': ObjectId(_id)})
 
+    # mark as notified
+    job_results.update_one({'_id': ObjectId(_id)}, {'$set': {'is_notified': True }})
+
     subs = []
 
     for job in job_results.find({'parent_id': _id}, limit=1000):
         subs.append(job['data'])
 
-    return jsonify({'type': job['type'], 'subs': subs})
+    return jsonify({'type': job['type'], 'data': job['data'], 'subs': subs})

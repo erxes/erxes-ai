@@ -91,6 +91,7 @@ def save_job_results(job_type, data):
     Save job results to database
     """
     database = get_database()
+    job_results = database.job_results
 
     if job_type == 'customerScoring':
         parent_job = {
@@ -100,7 +101,7 @@ def save_job_results(job_type, data):
             'created_at': datetime.datetime.utcnow()
         }
 
-        parent_job_id = database.job_results.insert_one(parent_job).inserted_id
+        parent_job_id = job_results.insert_one(parent_job).inserted_id
 
         child_jobs = []
 
@@ -112,4 +113,19 @@ def save_job_results(job_type, data):
                 'data': result,
             })
 
-        database.job_results.insert_many(child_jobs)
+        job_results.insert_many(child_jobs)
+
+    if job_type == 'suggestion':
+        job = {
+            'type': job_type,
+            'data': data,
+            'is_notified': False,
+            'created_at': datetime.datetime.utcnow()
+        }
+
+        prev_entry = job_results.find_one({'type': job_type, 'data.message': data['message']})
+
+        if prev_entry:
+            return job_results.update_one({'_id': prev_entry['_id']}, { '$set': { 'is_notified': False } })
+
+        database.job_results.insert_one(job)

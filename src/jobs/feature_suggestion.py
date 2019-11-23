@@ -3,8 +3,7 @@ Feature suggestion. Run every day
 """
 
 from pyspark.sql.types import StringType, StructField, StructType  # pylint: disable=import-error
-from src.utils import load_collection, create_session, execute_job
-from src.producer import publish
+from src.utils import load_collection, create_session, execute_job, save_job_results
 
 ID_SCHEMA = StructType([
     StructField('_id', StringType()),
@@ -21,7 +20,7 @@ def counter(session, name, message):
     count = session.sql('SELECT COUNT(*) FROM %s' % name).rdd.collect()[0][0]
 
     if count == 0:
-        publish({'action': 'featureSuggestion', 'message': message})
+        save_job_results('suggestion', {'message': message})
 
 
 def job(mongo_url):
