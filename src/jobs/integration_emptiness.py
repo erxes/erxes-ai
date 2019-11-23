@@ -3,8 +3,7 @@ Integration emptiness. Run every day
 """
 
 from pyspark.sql.types import StringType, StructField, StructType, ArrayType  # pylint: disable=import-error
-from src.utils import load_collection, create_session, execute_job
-from src.producer import publish
+from src.utils import load_collection, create_session, execute_job, save_job_results
 
 CHANNEL_SCHEMA = StructType([
     StructField('_id', StringType()),
@@ -46,7 +45,7 @@ def job(mongo_url):
             SIZE(integrationIds) = 0
     ''').rdd.map(lambda channel: channel['_id']).collect()
 
-    publish({'action': 'channelsWithoutIntegration', 'channelIds': channel_ids})
+    save_job_results('suggestion', {'message': 'channelsWithoutIntegration', 'channelIds': channel_ids})
 
     # Channels without members ===========================
     channel_ids_without_member_ids = session.sql('''
@@ -57,7 +56,7 @@ def job(mongo_url):
             SIZE(memberIds) = 0
     ''').rdd.map(lambda channel: channel['_id']).collect()
 
-    publish({'action': 'channelsWithoutMembers', 'channelIds': channel_ids_without_member_ids})
+    save_job_results('suggestion', {'message': 'channelsWithoutMembers', 'channelIds': channel_ids_without_member_ids})
 
     # Brands without integration ===========================
     brand_ids = session.sql('''
@@ -70,7 +69,7 @@ def job(mongo_url):
         HAVING COUNT(integrations._id) = 0
     ''').rdd.map(lambda brand: brand['_id']).collect()
 
-    publish({'action': 'brandsWithoutIntegration', 'brandIds': brand_ids})
+    save_job_results('suggestion', {'message': 'brandsWithoutIntegration', 'brandIds': brand_ids})
 
 
 execute_job(job)
