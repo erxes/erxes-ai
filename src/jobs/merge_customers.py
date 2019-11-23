@@ -5,7 +5,7 @@ Merge customers. Run every 3 days
 from pyspark.sql.types import StringType, StructField, StructType  # pylint: disable=import-error
 from pyspark import AccumulatorParam
 from src.utils import image_equality_checker, create_session, execute_job, load_collection, save_job_results
-# from src.producer import publish
+from src.producer import publish
 
 CUSTOMER_SCHEMA = StructType([
     StructField('_id', StringType()),
@@ -60,7 +60,7 @@ def compare(sub_list):
 
         if len(identical_customer_ids) > 1:
             job_results += [{'name': customer['name'], 'avatar': customer['avatar']}]
-            # publish({'action': 'mergeCustomers', 'customerIds': identical_customer_ids})
+            publish({'action': 'mergeCustomers', 'customerIds': identical_customer_ids})
 
 def job(mongo_url):
     """
