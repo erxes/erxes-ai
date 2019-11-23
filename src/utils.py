@@ -3,10 +3,12 @@ Common utils
 """
 
 import os
+import datetime
 import urllib
 from cv2 import countNonZero, subtract, split, imdecode, IMREAD_COLOR, error  # pylint: disable=no-name-in-module
 import numpy as np
 from dotenv import load_dotenv
+from pymongo import MongoClient
 from pyspark.sql import SparkSession  # pylint: disable=import-error
 
 
@@ -16,7 +18,7 @@ def execute_job(job):
     """
     load_dotenv()
 
-    mongo_url = os.getenv('MONGO_URL')
+    mongo_url = os.getenv('API_MONGO_URL')
 
     job(mongo_url)
 
@@ -73,3 +75,41 @@ def image_equality_checker(path1, path2):
 
     if countNonZero(blue) == 0 and countNonZero(green) == 0 and countNonZero(red) == 0:
         return True
+
+
+def get_database():
+    """
+    Get database
+    """
+    load_dotenv()
+
+    client = MongoClient(os.getenv('MONGO_URI'))
+    return client['erxes-ai']
+
+def save_job_results(job_type, data):
+    """
+    Save job results to database
+    """
+    database = get_database()
+
+    if job_type == 'customerScoring':
+        parent_job = {
+            'type': job_type,
+            'data': {'count': len(data)},
+            'is_notified': False,
+            'created_at': datetime.datetime.utcnow()
+        }
+
+        parent_job_id = database.job_results.insert_one(parent_job).inserted_id
+
+        child_jobs = []
+
+        for result in data:
+            child_jobs.append({
+                'parent_id': str(parent_job_id),
+                'type': job_type,
+                'created_at': datetime.datetime.utcnow(),
+                'data': result,
+            })
+
+        database.job_results.insert_many(child_jobs)

@@ -7,3 +7,4 @@ python-dotenv==0.10.3
 numpy==1.16.4
 opencv-python
 pymongo==3.4.0
+flask
