@@ -6,7 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 from pyspark.sql.types import StringType, StructField, StructType, MapType  # pylint: disable=import-error
 from src.producer import publish
-from src.utils import create_session, load_collection, execute_job
+from src.utils import create_session, load_collection, execute_job, save_job_results
 
 COMPANY_SCHEMA = StructType([
     StructField('_id', StringType()),
@@ -69,11 +69,13 @@ def job(mongo_url):
                 modifier['description'] = meta_title_tag.attrs['content']
 
             if modifier:
-                results.append({'_id': company['_id'], 'modifier': modifier})
+                results.append({'_id': company['_id'], 'website': website, 'modifier': modifier})
 
         except Exception as error:  # pylint:disable=broad-except
             print error
             continue
+
+    save_job_results('fillCompanyInfo', results)
 
     publish({'action': 'fillCompanyInfo', 'results': results})
 

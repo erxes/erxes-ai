@@ -20,7 +20,7 @@ def get_job_types():
 
     results = []
 
-    for job_type in ['mergeCustomers', 'companyMetaExtraction', 'customerScoring', 'suggestion']:
+    for job_type in ['mergeCustomers', 'fillCompanyInfo', 'customerScoring', 'suggestion']:
         results.append({
             'name': job_type,
             'notificationsCount': job_results.count({'type': job_type, 'parent_id': None, 'is_notified': False}),

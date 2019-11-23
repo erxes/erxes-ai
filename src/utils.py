@@ -93,27 +93,8 @@ def save_job_results(job_type, data):
     database = get_database()
     job_results = database.job_results
 
-    if job_type == 'customerScoring':
-        parent_job = {
-            'type': job_type,
-            'data': {'count': len(data)},
-            'is_notified': False,
-            'created_at': datetime.datetime.utcnow()
-        }
-
-        parent_job_id = job_results.insert_one(parent_job).inserted_id
-
-        child_jobs = []
-
-        for result in data:
-            child_jobs.append({
-                'parent_id': str(parent_job_id),
-                'type': job_type,
-                'created_at': datetime.datetime.utcnow(),
-                'data': result,
-            })
-
-        job_results.insert_many(child_jobs)
+    if not data:
+        return
 
     if job_type == 'suggestion':
         job = {
@@ -128,26 +109,27 @@ def save_job_results(job_type, data):
         if prev_entry:
             return job_results.update_one({'_id': prev_entry['_id']}, {'$set': {'is_notified': False}})
 
-        database.job_results.insert_one(job)
+        return database.job_results.insert_one(job)
 
-    if job_type == 'mergeCustomers' and data:
-        parent_job = {
+
+    # merge_customers, customer_scoring, company_meta_extractor
+    parent_job = {
+        'type': job_type,
+        'data': {'count': len(data)},
+        'is_notified': False,
+        'created_at': datetime.datetime.utcnow()
+    }
+
+    parent_job_id = job_results.insert_one(parent_job).inserted_id
+
+    child_jobs = []
+
+    for result in data:
+        child_jobs.append({
+            'parent_id': str(parent_job_id),
             'type': job_type,
-            'data': {'count': len(data)},
-            'is_notified': False,
-            'created_at': datetime.datetime.utcnow()
-        }
+            'created_at': datetime.datetime.utcnow(),
+            'data': result,
+        })
 
-        parent_job_id = job_results.insert_one(parent_job).inserted_id
-
-        child_jobs = []
-
-        for result in data:
-            child_jobs.append({
-                'parent_id': str(parent_job_id),
-                'type': job_type,
-                'created_at': datetime.datetime.utcnow(),
-                'data': result,
-            })
-
-        job_results.insert_many(child_jobs)
+    job_results.insert_many(child_jobs)
