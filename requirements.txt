@@ -1,4 +1,4 @@
-requests==2.22.0
+requests==2.31.0
 simplejson==3.6.4
 bs4==0.0.1
 beautifulsoup4==4.3.2
